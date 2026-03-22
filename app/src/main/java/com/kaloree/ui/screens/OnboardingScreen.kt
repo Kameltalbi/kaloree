@@ -41,22 +41,26 @@ fun OnboardingScreen(
     }
 
     var gender by remember { mutableStateOf("M") }
-    var age by remember { mutableStateOf("25") }
-    var weight by remember { mutableStateOf("70") }
-    var height by remember { mutableStateOf("175") }
+    var age by remember { mutableStateOf("") }
+    var weight by remember { mutableStateOf("") }
+    var height by remember { mutableStateOf("") }
     var goal by remember { mutableStateOf("maintien") }
     var activityLevel by remember { mutableStateOf("sedentaire") }
     var targetWeight by remember { mutableStateOf("") }
     var durationMonths by remember { mutableStateOf("6") }
 
     val needsTarget = goal == "perte" || goal == "prise"
+    val baseFieldsFilled = age.toIntOrNull() != null &&
+        weight.toDoubleOrNull() != null &&
+        height.toDoubleOrNull() != null
 
     val previewCalories = remember(gender, age, weight, height, goal, activityLevel, targetWeight, durationMonths) {
-        viewModel.calculatePreviewCalories(
+        if (!baseFieldsFilled) null
+        else viewModel.calculatePreviewCalories(
             gender,
-            age.toIntOrNull() ?: 25,
-            weight.toDoubleOrNull() ?: 70.0,
-            height.toDoubleOrNull() ?: 175.0,
+            age.toIntOrNull()!!,
+            weight.toDoubleOrNull()!!,
+            height.toDoubleOrNull()!!,
             goal,
             activityLevel,
             targetWeight.toDoubleOrNull(),
@@ -279,7 +283,10 @@ fun OnboardingScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = PrimaryGreen.copy(alpha = 0.1f)
+                    containerColor = if (previewCalories != null)
+                        PrimaryGreen.copy(alpha = 0.1f)
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Column(
@@ -290,12 +297,20 @@ fun OnboardingScreen(
                         text = "Objectif calorique quotidien",
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Text(
-                        text = "$previewCalories kcal",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryGreen
-                    )
+                    if (previewCalories != null) {
+                        Text(
+                            text = "$previewCalories kcal",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryGreen
+                        )
+                    } else {
+                        Text(
+                            text = "Remplis ton profil ci-dessus",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -305,9 +320,9 @@ fun OnboardingScreen(
                 onClick = {
                     viewModel.saveUser(
                         gender = gender,
-                        age = age.toIntOrNull() ?: 25,
-                        weight = weight.toDoubleOrNull() ?: 70.0,
-                        height = height.toDoubleOrNull() ?: 175.0,
+                        age = age.toIntOrNull() ?: return@Button,
+                        weight = weight.toDoubleOrNull() ?: return@Button,
+                        height = height.toDoubleOrNull() ?: return@Button,
                         goal = goal,
                         activityLevel = activityLevel,
                         targetWeight = if (needsTarget) targetWeight.toDoubleOrNull() else null,
@@ -319,7 +334,8 @@ fun OnboardingScreen(
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PrimaryGreen
-                )
+                ),
+                enabled = baseFieldsFilled
             ) {
                 Text("Commencer")
             }
