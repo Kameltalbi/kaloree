@@ -13,6 +13,9 @@ data class User(
     val height: Double,
     val goal: String,
     val calorieTarget: Int,
+    val targetWeight: Double? = null,
+    val durationMonths: Int? = null,
+    val dailyDeficit: Int = 0,
     val createdAt: Long = System.currentTimeMillis()
 )
 

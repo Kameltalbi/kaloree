@@ -45,15 +45,31 @@ fun OnboardingScreen(
     var weight by remember { mutableStateOf("70") }
     var height by remember { mutableStateOf("175") }
     var goal by remember { mutableStateOf("maintien") }
+    var targetWeight by remember { mutableStateOf("") }
+    var durationMonths by remember { mutableStateOf("6") }
 
-    val previewCalories = remember(gender, age, weight, height, goal) {
+    val needsTarget = goal == "perte" || goal == "prise"
+
+    val previewCalories = remember(gender, age, weight, height, goal, targetWeight, durationMonths) {
         viewModel.calculatePreviewCalories(
             gender,
             age.toIntOrNull() ?: 25,
             weight.toDoubleOrNull() ?: 70.0,
             height.toDoubleOrNull() ?: 175.0,
-            goal
+            goal,
+            targetWeight.toDoubleOrNull(),
+            durationMonths.toIntOrNull()
         )
+    }
+
+    val dailyDelta = remember(weight, targetWeight, durationMonths, goal) {
+        val tw = targetWeight.toDoubleOrNull()
+        val dm = durationMonths.toIntOrNull()
+        val cw = weight.toDoubleOrNull() ?: 70.0
+        if (tw != null && dm != null && dm > 0 && needsTarget) {
+            val diff = kotlin.math.abs(cw - tw)
+            (diff * 7700.0 / (dm * 30.0)).toInt()
+        } else null
     }
 
     Scaffold { padding ->
@@ -158,7 +174,7 @@ fun OnboardingScreen(
                     .selectableGroup()
             ) {
                 GoalOption(
-                    text = "Perte de poids (-500 kcal)",
+                    text = "Perte de poids",
                     selected = goal == "perte",
                     onClick = { goal = "perte" }
                 )
@@ -168,10 +184,58 @@ fun OnboardingScreen(
                     onClick = { goal = "maintien" }
                 )
                 GoalOption(
-                    text = "Prise de masse (+300 kcal)",
+                    text = "Prise de masse",
                     selected = goal == "prise",
                     onClick = { goal = "prise" }
                 )
+            }
+
+            // Conditional target weight + duration fields
+            if (needsTarget) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = targetWeight,
+                    onValueChange = { targetWeight = it.filter { c -> c.isDigit() || c == '.' } },
+                    label = { Text(if (goal == "perte") "Poids cible (kg)" else "Poids objectif (kg)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    supportingText = {
+                        val tw = targetWeight.toDoubleOrNull()
+                        val cw = weight.toDoubleOrNull() ?: 70.0
+                        if (tw != null) {
+                            val diff = kotlin.math.abs(cw - tw)
+                            Text("${diff.toInt()} kg ${if (goal == "perte") "à perdre" else "à prendre"}")
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = durationMonths,
+                    onValueChange = { durationMonths = it.filter { c -> c.isDigit() } },
+                    label = { Text("Durée (mois)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    suffix = { Text("mois") }
+                )
+
+                dailyDelta?.let { delta ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Text(
+                            text = if (goal == "perte") "Déficit : $delta kcal/jour" else "Surplus : +$delta kcal/jour",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -209,7 +273,9 @@ fun OnboardingScreen(
                         age = age.toIntOrNull() ?: 25,
                         weight = weight.toDoubleOrNull() ?: 70.0,
                         height = height.toDoubleOrNull() ?: 175.0,
-                        goal = goal
+                        goal = goal,
+                        targetWeight = if (needsTarget) targetWeight.toDoubleOrNull() else null,
+                        durationMonths = if (needsTarget) durationMonths.toIntOrNull() else null
                     )
                 },
                 modifier = Modifier

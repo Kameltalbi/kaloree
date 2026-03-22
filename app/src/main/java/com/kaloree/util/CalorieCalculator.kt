@@ -20,19 +20,56 @@ object CalorieCalculator {
     }
 
     /**
-     * Calculate daily calorie target based on BMR and goal
+     * Calculate TDEE (Total Daily Energy Expenditure)
      * Using sedentary multiplier (1.2) as base
+     */
+    fun calculateTDEE(bmr: Double): Double = bmr * 1.2
+
+    /**
+     * Calculate daily calorie target based on TDEE and goal
+     * Uses fixed offset only for MAINTAIN and fallback
      */
     fun calculateDailyCalories(
         bmr: Double,
         goal: Goal
     ): Int {
-        val tdee = bmr * 1.2 // Sedentary multiplier
+        val tdee = calculateTDEE(bmr)
         return when (goal) {
             Goal.LOSE_WEIGHT -> (tdee - 500).toInt()
             Goal.MAINTAIN -> tdee.toInt()
             Goal.GAIN_MUSCLE -> (tdee + 300).toInt()
         }
+    }
+
+    /**
+     * Calculate dynamic daily calorie target based on target weight and duration.
+     * Formula:
+     *   1 kg fat ≈ 7700 kcal
+     *   dailyDeficit = (weightDiff × 7700) / (durationMonths × 30)
+     *
+     * @param currentWeight in kg
+     * @param targetWeight  in kg
+     * @param durationMonths duration to reach the goal
+     * @param bmr base metabolic rate
+     * @return Pair(dailyCalorieTarget, dailyDeficit)
+     */
+    fun calculateDailyCaloriesWithTarget(
+        currentWeight: Double,
+        targetWeight: Double,
+        durationMonths: Int,
+        bmr: Double
+    ): Pair<Int, Int> {
+        val tdee = calculateTDEE(bmr)
+        val weightDiff = kotlin.math.abs(currentWeight - targetWeight)
+        val days = durationMonths * 30.0
+        val dailyDelta = (weightDiff * 7700.0 / days).toInt()
+
+        val target = if (currentWeight > targetWeight) {
+            (tdee - dailyDelta).coerceAtLeast(1200.0).toInt() // min 1200 kcal
+        } else {
+            (tdee + dailyDelta).toInt()
+        }
+        return Pair(target, dailyDelta)
     }
 
     /**

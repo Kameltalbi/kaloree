@@ -30,23 +30,32 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         age: Int,
         weight: Double,
         height: Double,
-        goal: String
+        goal: String,
+        targetWeight: Double? = null,
+        durationMonths: Int? = null
     ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 val isMale = gender.equals("M", ignoreCase = true)
-                val goalEnum = when (goal.lowercase()) {
-                    "perte" -> Goal.LOSE_WEIGHT
-                    "maintien" -> Goal.MAINTAIN
-                    "prise" -> Goal.GAIN_MUSCLE
-                    else -> Goal.MAINTAIN
+                val bmr = CalorieCalculator.calculateBMR(weight, height, age, isMale)
+
+                val (calorieTarget, dailyDeficit) = when {
+                    goal == "maintien" -> {
+                        val tdee = CalorieCalculator.calculateTDEE(bmr).toInt()
+                        Pair(tdee, 0)
+                    }
+                    targetWeight != null && durationMonths != null && durationMonths > 0 -> {
+                        CalorieCalculator.calculateDailyCaloriesWithTarget(
+                            weight, targetWeight, durationMonths, bmr
+                        )
+                    }
+                    else -> {
+                        val goalEnum = if (goal == "prise") Goal.GAIN_MUSCLE else Goal.LOSE_WEIGHT
+                        Pair(CalorieCalculator.calculateDailyCalories(bmr, goalEnum), 0)
+                    }
                 }
 
-                val bmr = CalorieCalculator.calculateBMR(weight, height, age, isMale)
-                val calorieTarget = CalorieCalculator.calculateDailyCalories(bmr, goalEnum)
-
-                // Delete existing user first
                 userDao.deleteAllUsers()
 
                 val user = User(
@@ -55,7 +64,10 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
                     weight = weight,
                     height = height,
                     goal = goal,
-                    calorieTarget = calorieTarget
+                    calorieTarget = calorieTarget,
+                    targetWeight = targetWeight,
+                    durationMonths = durationMonths,
+                    dailyDeficit = dailyDeficit
                 )
                 userDao.insertUser(user)
                 _onboardingComplete.value = true
@@ -72,16 +84,23 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         age: Int,
         weight: Double,
         height: Double,
-        goal: String
+        goal: String,
+        targetWeight: Double? = null,
+        durationMonths: Int? = null
     ): Int {
         val isMale = gender.equals("M", ignoreCase = true)
-        val goalEnum = when (goal.lowercase()) {
-            "perte" -> Goal.LOSE_WEIGHT
-            "maintien" -> Goal.MAINTAIN
-            "prise" -> Goal.GAIN_MUSCLE
-            else -> Goal.MAINTAIN
-        }
         val bmr = CalorieCalculator.calculateBMR(weight, height, age, isMale)
-        return CalorieCalculator.calculateDailyCalories(bmr, goalEnum)
+        return when {
+            goal == "maintien" -> CalorieCalculator.calculateTDEE(bmr).toInt()
+            targetWeight != null && durationMonths != null && durationMonths > 0 -> {
+                CalorieCalculator.calculateDailyCaloriesWithTarget(
+                    weight, targetWeight, durationMonths, bmr
+                ).first
+            }
+            else -> {
+                val goalEnum = if (goal == "prise") Goal.GAIN_MUSCLE else Goal.LOSE_WEIGHT
+                CalorieCalculator.calculateDailyCalories(bmr, goalEnum)
+            }
+        }
     }
 }
