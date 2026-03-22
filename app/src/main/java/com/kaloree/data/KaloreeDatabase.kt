@@ -54,6 +54,26 @@ abstract class KaloreeDatabase : RoomDatabase() {
             }
         }
 
+        override fun onDestructiveMigration(db: SupportSQLiteDatabase) {
+            super.onDestructiveMigration(db)
+            INSTANCE?.let { database ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    populateDatabase(database.foodDao())
+                }
+            }
+        }
+
+        override fun onOpen(db: SupportSQLiteDatabase) {
+            super.onOpen(db)
+            INSTANCE?.let { database ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    if (database.foodDao().getFoodCount() == 0) {
+                        populateDatabase(database.foodDao())
+                    }
+                }
+            }
+        }
+
         suspend fun populateDatabase(foodDao: FoodDao) {
             // Insert mock foods
             val mockFoods = listOf(

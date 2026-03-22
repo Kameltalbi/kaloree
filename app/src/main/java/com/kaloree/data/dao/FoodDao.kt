@@ -24,6 +24,9 @@ interface FoodDao {
     @Delete
     suspend fun deleteFood(food: Food)
 
+    @Query("SELECT COUNT(*) FROM foods")
+    suspend fun getFoodCount(): Int
+
     @Query("SELECT * FROM foods WHERE id = :id")
     suspend fun getFoodById(id: Long): Food?
 }
