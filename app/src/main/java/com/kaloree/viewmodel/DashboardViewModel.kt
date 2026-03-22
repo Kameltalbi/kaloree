@@ -100,4 +100,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             weightLogDao.insertWeightLog(weightLog)
         }
     }
+
+    fun deleteMeal(meal: Meal) {
+        viewModelScope.launch {
+            mealDao.deleteMeal(meal)
+        }
+    }
 }

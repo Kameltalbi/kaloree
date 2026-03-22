@@ -13,6 +13,12 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+data class CartItem(
+    val food: Food,
+    val grams: Double,
+    val calories: Double
+)
+
 @OptIn(FlowPreview::class)
 class AddMealViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -51,7 +57,27 @@ class AddMealViewModel(application: Application) : AndroidViewModel(application)
     private val _mealSaved = MutableStateFlow(false)
     val mealSaved: StateFlow<Boolean> = _mealSaved.asStateFlow()
 
+    private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
+    val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
+
+    val cartTotalCalories: StateFlow<Double> = _cartItems
+        .map { it.sumOf { item -> item.calories } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
     fun setMealType(type: MealType) { _mealType.value = type }
+
+    fun confirmItem() {
+        val food = _selectedFood.value ?: return
+        val grams = effectiveGrams.value
+        val cal = calculatedCalories.value
+        _cartItems.value = _cartItems.value + CartItem(food, grams, cal)
+        clearSelection()
+        _searchQuery.value = ""
+    }
+
+    fun removeCartItem(index: Int) {
+        _cartItems.value = _cartItems.value.toMutableList().also { it.removeAt(index) }
+    }
 
     private val _usePortions = MutableStateFlow(true)
     val usePortions: StateFlow<Boolean> = _usePortions.asStateFlow()
@@ -98,23 +124,25 @@ class AddMealViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun saveMeal(onSaved: () -> Unit) {
-        val food = _selectedFood.value ?: return
-        val calories = calculatedCalories.value
-        val grams = effectiveGrams.value
+        val items = _cartItems.value
+        if (items.isEmpty()) return
         viewModelScope.launch {
-            val savedFoodId = if (food.id == 0L) {
-                repository.saveFood(food)
-            } else {
-                food.id
-            }
-            mealDao.insertMeal(
-                Meal(
-                    foodId = savedFoodId,
-                    quantity = grams,
-                    totalCalories = calories,
-                    mealType = _mealType.value.name
+            items.forEach { item ->
+                val savedFoodId = if (item.food.id == 0L) {
+                    repository.saveFood(item.food)
+                } else {
+                    item.food.id
+                }
+                mealDao.insertMeal(
+                    Meal(
+                        foodId = savedFoodId,
+                        quantity = item.grams,
+                        totalCalories = item.calories,
+                        mealType = _mealType.value.name
+                    )
                 )
-            )
+            }
+            _cartItems.value = emptyList()
             _mealSaved.value = true
             onSaved()
         }

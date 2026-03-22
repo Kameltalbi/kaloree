@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.filled.Delete
+import com.kaloree.data.entity.Meal
 import com.kaloree.data.entity.MealType
 import com.kaloree.data.entity.MealWithFood
 import com.kaloree.ui.theme.PrimaryGreen
@@ -143,7 +145,12 @@ fun DashboardScreen(
                 )
                 typeOrder.forEach { type ->
                     val group = mealsByType[type] ?: return@forEach
-                    MealTypeSection(type = type, meals = group, onAddMeal = onAddMeal)
+                    MealTypeSection(
+                        type = type,
+                        meals = group,
+                        onAddMeal = onAddMeal,
+                        onDeleteMeal = { viewModel.deleteMeal(it) }
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
@@ -320,7 +327,8 @@ fun StatCard(
 fun MealTypeSection(
     type: MealType,
     meals: List<MealWithFood>,
-    onAddMeal: () -> Unit
+    onAddMeal: () -> Unit,
+    onDeleteMeal: (Meal) -> Unit
 ) {
     val total = meals.sumOf { it.meal.totalCalories }.toInt()
     Card(
@@ -352,7 +360,7 @@ fun MealTypeSection(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 3.dp),
+                        .padding(vertical = 2.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -366,6 +374,17 @@ fun MealTypeSection(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    IconButton(
+                        onClick = { onDeleteMeal(mwf.meal) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Supprimer",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }

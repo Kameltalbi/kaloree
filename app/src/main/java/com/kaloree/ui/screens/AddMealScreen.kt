@@ -15,11 +15,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.filled.Delete
 import com.kaloree.data.entity.Food
 import com.kaloree.data.entity.MealType
 import com.kaloree.data.repository.FoodSearchResult
 import com.kaloree.ui.theme.PrimaryGreen
 import com.kaloree.viewmodel.AddMealViewModel
+import com.kaloree.viewmodel.CartItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +40,8 @@ fun AddMealScreen(
     val grams by viewModel.grams.collectAsStateWithLifecycle()
     val effectiveGrams by viewModel.effectiveGrams.collectAsStateWithLifecycle()
     val calculatedCalories by viewModel.calculatedCalories.collectAsStateWithLifecycle()
+    val cartItems by viewModel.cartItems.collectAsStateWithLifecycle()
+    val cartTotalCalories by viewModel.cartTotalCalories.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -90,6 +94,67 @@ fun AddMealScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Cart summary (shown when items added)
+            if (cartItems.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = PrimaryGreen.copy(alpha = 0.08f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${mealType.emoji} ${mealType.label} — ${cartItems.size} aliment(s)",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${cartTotalCalories.toInt()} kcal",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryGreen
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        cartItems.forEachIndexed { index, item ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = item.food.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = "${item.grams.toInt()} g  •  ${item.calories.toInt()} kcal",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                IconButton(
+                                    onClick = { viewModel.removeCartItem(index) },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Retirer",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // Food List or Selected Food Details
             if (selectedFood == null) {
@@ -250,18 +315,27 @@ fun AddMealScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Add Button
+                // Ajouter au panier
                 Button(
-                    onClick = { viewModel.saveMeal { onMealAdded() } },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryGreen
-                    ),
+                    onClick = { viewModel.confirmItem() },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
                     enabled = calculatedCalories > 0
                 ) {
-                    Text("Ajouter le repas")
+                    Text("+ Ajouter au repas")
+                }
+
+                if (cartItems.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { viewModel.saveMeal { onMealAdded() } },
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+                        Text("Terminer (${cartItems.size} aliment(s) — ${cartTotalCalories.toInt()} kcal)")
+                    }
                 }
             }
         }
