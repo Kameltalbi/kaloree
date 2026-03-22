@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 @Database(
     entities = [User::class, Food::class, Meal::class, Activity::class, WeightLog::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class KaloreeDatabase : RoomDatabase() {

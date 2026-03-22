@@ -21,5 +21,18 @@ data class Meal(
     val foodId: Long,
     val quantity: Double,
     val totalCalories: Double,
+    val mealType: String = MealType.DEJEUNER.name,
     val date: Long = System.currentTimeMillis()
 )
+
+enum class MealType(val label: String, val emoji: String) {
+    PETIT_DEJ("Petit-déjeuner", "🌅"),
+    DEJEUNER("Déjeuner", "🍽️"),
+    DINER("Dîner", "🌙"),
+    COLLATION("Collation", "🍎");
+
+    companion object {
+        fun fromName(name: String): MealType =
+            values().firstOrNull { it.name == name } ?: DEJEUNER
+    }
+}

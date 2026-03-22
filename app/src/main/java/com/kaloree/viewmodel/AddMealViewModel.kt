@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kaloree.data.KaloreeDatabase
 import com.kaloree.data.entity.Food
+import com.kaloree.data.entity.Meal
+import com.kaloree.data.entity.MealType
 import com.kaloree.data.repository.FoodRepository
 import com.kaloree.data.repository.FoodSearchResult
 import kotlinx.coroutines.FlowPreview
@@ -37,8 +39,19 @@ class AddMealViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private val db = KaloreeDatabase.getDatabase(application)
+    private val mealDao = db.mealDao()
+
     private val _selectedFood = MutableStateFlow<Food?>(null)
     val selectedFood: StateFlow<Food?> = _selectedFood.asStateFlow()
+
+    private val _mealType = MutableStateFlow(MealType.DEJEUNER)
+    val mealType: StateFlow<MealType> = _mealType.asStateFlow()
+
+    private val _mealSaved = MutableStateFlow(false)
+    val mealSaved: StateFlow<Boolean> = _mealSaved.asStateFlow()
+
+    fun setMealType(type: MealType) { _mealType.value = type }
 
     private val _usePortions = MutableStateFlow(true)
     val usePortions: StateFlow<Boolean> = _usePortions.asStateFlow()
@@ -82,6 +95,29 @@ class AddMealViewModel(application: Application) : AndroidViewModel(application)
 
     fun setGrams(g: Double) {
         _grams.value = g
+    }
+
+    fun saveMeal(onSaved: () -> Unit) {
+        val food = _selectedFood.value ?: return
+        val calories = calculatedCalories.value
+        val grams = effectiveGrams.value
+        viewModelScope.launch {
+            val savedFoodId = if (food.id == 0L) {
+                repository.saveFood(food)
+            } else {
+                food.id
+            }
+            mealDao.insertMeal(
+                Meal(
+                    foodId = savedFoodId,
+                    quantity = grams,
+                    totalCalories = calories,
+                    mealType = _mealType.value.name
+                )
+            )
+            _mealSaved.value = true
+            onSaved()
+        }
     }
 
     fun clearSelection() {

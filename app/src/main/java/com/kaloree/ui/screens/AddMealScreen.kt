@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kaloree.data.entity.Food
+import com.kaloree.data.entity.MealType
 import com.kaloree.data.repository.FoodSearchResult
 import com.kaloree.ui.theme.PrimaryGreen
 import com.kaloree.viewmodel.AddMealViewModel
@@ -31,6 +32,7 @@ fun AddMealScreen(
     val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     val selectedFood by viewModel.selectedFood.collectAsStateWithLifecycle()
+    val mealType by viewModel.mealType.collectAsStateWithLifecycle()
     val usePortions by viewModel.usePortions.collectAsStateWithLifecycle()
     val portionCount by viewModel.portionCount.collectAsStateWithLifecycle()
     val grams by viewModel.grams.collectAsStateWithLifecycle()
@@ -55,6 +57,29 @@ fun AddMealScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            // Meal type selector
+            Text(
+                text = "Type de repas",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                MealType.values().forEach { type ->
+                    FilterChip(
+                        selected = mealType == type,
+                        onClick = { viewModel.setMealType(type) },
+                        label = { Text("${type.emoji} ${type.label}") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             // Search Bar
             OutlinedTextField(
                 value = searchQuery,
@@ -227,11 +252,7 @@ fun AddMealScreen(
 
                 // Add Button
                 Button(
-                    onClick = {
-                        // Here you would typically save the meal
-                        // For now, just navigate back
-                        onMealAdded()
-                    },
+                    onClick = { viewModel.saveMeal { onMealAdded() } },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),

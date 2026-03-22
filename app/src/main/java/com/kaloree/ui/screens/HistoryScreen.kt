@@ -97,29 +97,43 @@ fun HistoryScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Meals Section
-            Text(
-                text = "Repas (${meals.size})",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+            // Meals grouped by type
             if (meals.isEmpty()) {
                 Text(
-                    text = "Aucun repas enregistre",
+                    text = "Aucun repas enregistré",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             } else {
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 200.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(meals) { meal ->
+                val mealsByType = meals.groupBy { it.mealType }
+                val typeOrder = listOf("PETIT_DEJ", "DEJEUNER", "DINER", "COLLATION")
+                typeOrder.forEach { typeName ->
+                    val group = mealsByType[typeName] ?: return@forEach
+                    val type = com.kaloree.data.entity.MealType.fromName(typeName)
+                    val groupTotal = group.sumOf { it.totalCalories }.toInt()
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${type.emoji} ${type.label}",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "$groupTotal kcal",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = PrimaryGreen
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    group.forEach { meal ->
                         MealHistoryItem(meal = meal)
+                        Spacer(modifier = Modifier.height(4.dp))
                     }
                 }
             }
