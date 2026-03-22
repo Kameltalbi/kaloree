@@ -31,6 +31,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         weight: Double,
         height: Double,
         goal: String,
+        activityLevel: String = "sedentaire",
         targetWeight: Double? = null,
         durationMonths: Int? = null
     ) {
@@ -42,17 +43,17 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
 
                 val (calorieTarget, dailyDeficit) = when {
                     goal == "maintien" -> {
-                        val tdee = CalorieCalculator.calculateTDEE(bmr).toInt()
+                        val tdee = CalorieCalculator.calculateTDEE(bmr, activityLevel).toInt()
                         Pair(tdee, 0)
                     }
                     targetWeight != null && durationMonths != null && durationMonths > 0 -> {
                         CalorieCalculator.calculateDailyCaloriesWithTarget(
-                            weight, targetWeight, durationMonths, bmr
+                            weight, targetWeight, durationMonths, bmr, activityLevel
                         )
                     }
                     else -> {
                         val goalEnum = if (goal == "prise") Goal.GAIN_MUSCLE else Goal.LOSE_WEIGHT
-                        Pair(CalorieCalculator.calculateDailyCalories(bmr, goalEnum), 0)
+                        Pair(CalorieCalculator.calculateDailyCalories(bmr, goalEnum, activityLevel), 0)
                     }
                 }
 
@@ -65,6 +66,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
                     height = height,
                     goal = goal,
                     calorieTarget = calorieTarget,
+                    activityLevel = activityLevel,
                     targetWeight = targetWeight,
                     durationMonths = durationMonths,
                     dailyDeficit = dailyDeficit
@@ -85,21 +87,22 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         weight: Double,
         height: Double,
         goal: String,
+        activityLevel: String = "sedentaire",
         targetWeight: Double? = null,
         durationMonths: Int? = null
     ): Int {
         val isMale = gender.equals("M", ignoreCase = true)
         val bmr = CalorieCalculator.calculateBMR(weight, height, age, isMale)
         return when {
-            goal == "maintien" -> CalorieCalculator.calculateTDEE(bmr).toInt()
+            goal == "maintien" -> CalorieCalculator.calculateTDEE(bmr, activityLevel).toInt()
             targetWeight != null && durationMonths != null && durationMonths > 0 -> {
                 CalorieCalculator.calculateDailyCaloriesWithTarget(
-                    weight, targetWeight, durationMonths, bmr
+                    weight, targetWeight, durationMonths, bmr, activityLevel
                 ).first
             }
             else -> {
                 val goalEnum = if (goal == "prise") Goal.GAIN_MUSCLE else Goal.LOSE_WEIGHT
-                CalorieCalculator.calculateDailyCalories(bmr, goalEnum)
+                CalorieCalculator.calculateDailyCalories(bmr, goalEnum, activityLevel)
             }
         }
     }

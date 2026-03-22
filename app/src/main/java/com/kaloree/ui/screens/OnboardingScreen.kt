@@ -45,18 +45,20 @@ fun OnboardingScreen(
     var weight by remember { mutableStateOf("70") }
     var height by remember { mutableStateOf("175") }
     var goal by remember { mutableStateOf("maintien") }
+    var activityLevel by remember { mutableStateOf("sedentaire") }
     var targetWeight by remember { mutableStateOf("") }
     var durationMonths by remember { mutableStateOf("6") }
 
     val needsTarget = goal == "perte" || goal == "prise"
 
-    val previewCalories = remember(gender, age, weight, height, goal, targetWeight, durationMonths) {
+    val previewCalories = remember(gender, age, weight, height, goal, activityLevel, targetWeight, durationMonths) {
         viewModel.calculatePreviewCalories(
             gender,
             age.toIntOrNull() ?: 25,
             weight.toDoubleOrNull() ?: 70.0,
             height.toDoubleOrNull() ?: 175.0,
             goal,
+            activityLevel,
             targetWeight.toDoubleOrNull(),
             durationMonths.toIntOrNull()
         )
@@ -157,6 +159,39 @@ fun OnboardingScreen(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Activity Level
+            Text(
+                text = "Niveau d'activité",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val activityOptions = listOf(
+                "sedentaire" to "Sédentaire (bureau, peu d'exercice)",
+                "leger" to "Légèrement actif (1-3j/sem)",
+                "modere" to "Modérément actif (3-5j/sem)",
+                "actif" to "Très actif (6-7j/sem)",
+                "tres_actif" to "Extrêmement actif (sport + travail physique)"
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup()
+            ) {
+                activityOptions.forEach { (key, label) ->
+                    GoalOption(
+                        text = label,
+                        selected = activityLevel == key,
+                        onClick = { activityLevel = key }
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -274,6 +309,7 @@ fun OnboardingScreen(
                         weight = weight.toDoubleOrNull() ?: 70.0,
                         height = height.toDoubleOrNull() ?: 175.0,
                         goal = goal,
+                        activityLevel = activityLevel,
                         targetWeight = if (needsTarget) targetWeight.toDoubleOrNull() else null,
                         durationMonths = if (needsTarget) durationMonths.toIntOrNull() else null
                     )

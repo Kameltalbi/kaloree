@@ -20,10 +20,21 @@ object CalorieCalculator {
     }
 
     /**
-     * Calculate TDEE (Total Daily Energy Expenditure)
-     * Using sedentary multiplier (1.2) as base
+     * Activity multipliers (PAL - Physical Activity Level)
      */
-    fun calculateTDEE(bmr: Double): Double = bmr * 1.2
+    fun activityMultiplier(activityLevel: String): Double = when (activityLevel) {
+        "leger"       -> 1.375  // exercice léger 1-3j/sem
+        "modere"      -> 1.55   // exercice modéré 3-5j/sem
+        "actif"       -> 1.725  // exercice intense 6-7j/sem
+        "tres_actif"  -> 1.9    // sport + travail physique
+        else          -> 1.2    // sédentaire (défaut)
+    }
+
+    /**
+     * Calculate TDEE (Total Daily Energy Expenditure)
+     */
+    fun calculateTDEE(bmr: Double, activityLevel: String = "sedentaire"): Double =
+        bmr * activityMultiplier(activityLevel)
 
     /**
      * Calculate daily calorie target based on TDEE and goal
@@ -31,9 +42,10 @@ object CalorieCalculator {
      */
     fun calculateDailyCalories(
         bmr: Double,
-        goal: Goal
+        goal: Goal,
+        activityLevel: String = "sedentaire"
     ): Int {
-        val tdee = calculateTDEE(bmr)
+        val tdee = calculateTDEE(bmr, activityLevel)
         return when (goal) {
             Goal.LOSE_WEIGHT -> (tdee - 500).toInt()
             Goal.MAINTAIN -> tdee.toInt()
@@ -57,9 +69,10 @@ object CalorieCalculator {
         currentWeight: Double,
         targetWeight: Double,
         durationMonths: Int,
-        bmr: Double
+        bmr: Double,
+        activityLevel: String = "sedentaire"
     ): Pair<Int, Int> {
-        val tdee = calculateTDEE(bmr)
+        val tdee = calculateTDEE(bmr, activityLevel)
         val weightDiff = kotlin.math.abs(currentWeight - targetWeight)
         val days = durationMonths * 30.0
         val dailyDelta = (weightDiff * 7700.0 / days).toInt()
