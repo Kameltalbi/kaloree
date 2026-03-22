@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kaloree.data.entity.MealType
+import com.kaloree.data.entity.MealWithFood
 import com.kaloree.ui.theme.PrimaryGreen
 import com.kaloree.viewmodel.DashboardViewModel
 
@@ -39,6 +41,7 @@ fun DashboardScreen(
     val calorieProgress by viewModel.calorieProgress.collectAsStateWithLifecycle()
     val statusMessage by viewModel.statusMessage.collectAsStateWithLifecycle()
     val latestWeight by viewModel.latestWeight.collectAsStateWithLifecycle()
+    val mealsByType by viewModel.mealsWithFoodByType.collectAsStateWithLifecycle()
 
     Scaffold { padding ->
         Column(
@@ -100,15 +103,54 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Repas du jour par type
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Repas du jour",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                TextButton(onClick = onAddMeal) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Ajouter")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (mealsByType.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Text(
+                        text = "Aucun repas enregistré aujourd'hui",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                val typeOrder = listOf(
+                    MealType.PETIT_DEJ, MealType.DEJEUNER, MealType.DINER, MealType.COLLATION
+                )
+                typeOrder.forEach { type ->
+                    val group = mealsByType[type] ?: return@forEach
+                    MealTypeSection(type = type, meals = group, onAddMeal = onAddMeal)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Quick Actions
-            Text(
-                text = "Actions rapides",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -120,7 +162,7 @@ fun DashboardScreen(
                     modifier = Modifier.weight(1f)
                 )
                 QuickActionButton(
-                    text = "Ajouter activite",
+                    text = "Ajouter activité",
                     icon = Icons.Default.Star,
                     onClick = onAddActivity,
                     modifier = Modifier.weight(1f)
@@ -270,6 +312,62 @@ fun StatCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = color.copy(alpha = 0.7f)
             )
+        }
+    }
+}
+
+@Composable
+fun MealTypeSection(
+    type: MealType,
+    meals: List<MealWithFood>,
+    onAddMeal: () -> Unit
+) {
+    val total = meals.sumOf { it.meal.totalCalories }.toInt()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = PrimaryGreen.copy(alpha = 0.05f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${type.emoji} ${type.label}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "$total kcal",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryGreen
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            meals.forEach { mwf ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 3.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = mwf.food?.name ?: "Aliment #${mwf.meal.foodId}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "${mwf.meal.quantity.toInt()} g  •  ${mwf.meal.totalCalories.toInt()} kcal",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }

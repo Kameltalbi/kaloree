@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kaloree.data.KaloreeDatabase
 import com.kaloree.data.entity.*
+import com.kaloree.data.entity.MealWithFood
 import com.kaloree.util.CalorieCalculator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -32,6 +33,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val consumedCalories: StateFlow<Double> = mealDao.getMealsForDateRange(today, tomorrow)
         .map { meals -> meals.sumOf { it.totalCalories } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val mealsWithFoodByType: StateFlow<Map<MealType, List<MealWithFood>>> =
+        mealDao.getMealsWithFoodForDateRange(today, tomorrow)
+            .map { list ->
+                list.groupBy { MealType.fromName(it.meal.mealType) }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     val burnedCalories: StateFlow<Double> = activityDao.getActivitiesForDateRange(today, tomorrow)
         .map { activities -> activities.sumOf { it.calories } }
