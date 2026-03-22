@@ -21,7 +21,6 @@ import com.kaloree.viewmodel.ProfileViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onNavigateBack: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
@@ -112,12 +111,7 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profil") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
-                    }
-                }
+                title = { Text("Profil") }
             )
         }
     ) { padding ->

@@ -26,7 +26,6 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeightScreen(
-    onNavigateBack: () -> Unit,
     viewModel: WeightViewModel = viewModel()
 ) {
     val weightLogs by viewModel.weightLogs.collectAsStateWithLifecycle()
@@ -73,12 +72,7 @@ fun WeightScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Suivi du poids") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
-                    }
-                }
+                title = { Text("Suivi du poids") }
             )
         },
         floatingActionButton = {

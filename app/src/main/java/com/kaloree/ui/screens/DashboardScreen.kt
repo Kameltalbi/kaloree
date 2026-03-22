@@ -8,8 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,9 +29,6 @@ import com.kaloree.viewmodel.DashboardViewModel
 fun DashboardScreen(
     onAddMeal: () -> Unit,
     onAddActivity: () -> Unit,
-    onViewHistory: () -> Unit,
-    onViewWeight: () -> Unit,
-    onViewProfile: () -> Unit,
     viewModel: DashboardViewModel = viewModel()
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
@@ -53,21 +48,6 @@ fun DashboardScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Bonjour",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = onViewProfile) {
-                    Icon(Icons.Default.Person, contentDescription = "Profil")
-                }
-            }
 
             Text(
                 text = statusMessage,
@@ -143,26 +123,6 @@ fun DashboardScreen(
                     text = "Ajouter activite",
                     icon = Icons.Default.Star,
                     onClick = onAddActivity,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                QuickActionButton(
-                    text = "Historique",
-                    icon = Icons.Default.DateRange,
-                    onClick = onViewHistory,
-                    modifier = Modifier.weight(1f)
-                )
-                QuickActionButton(
-                    text = "Poids",
-                    icon = Icons.Default.Star,
-                    onClick = onViewWeight,
                     modifier = Modifier.weight(1f)
                 )
             }

@@ -25,7 +25,6 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    onNavigateBack: () -> Unit,
     viewModel: HistoryViewModel = viewModel()
 ) {
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
@@ -39,12 +38,7 @@ fun HistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Historique") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
-                    }
-                }
+                title = { Text("Historique") }
             )
         }
     ) { padding ->
