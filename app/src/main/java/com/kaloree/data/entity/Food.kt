@@ -10,5 +10,7 @@ data class Food(
     val name: String,
     val caloriesPer100g: Double,
     val country: String? = null,
+    val portionSize: Double = 100.0,
+    val portionUnit: String = "portion",
     val isCustom: Boolean = false
 )

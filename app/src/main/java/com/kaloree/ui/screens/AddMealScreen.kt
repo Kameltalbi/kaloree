@@ -29,7 +29,10 @@ fun AddMealScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val foods by viewModel.foods.collectAsStateWithLifecycle()
     val selectedFood by viewModel.selectedFood.collectAsStateWithLifecycle()
-    val quantity by viewModel.quantity.collectAsStateWithLifecycle()
+    val usePortions by viewModel.usePortions.collectAsStateWithLifecycle()
+    val portionCount by viewModel.portionCount.collectAsStateWithLifecycle()
+    val grams by viewModel.grams.collectAsStateWithLifecycle()
+    val effectiveGrams by viewModel.effectiveGrams.collectAsStateWithLifecycle()
     val calculatedCalories by viewModel.calculatedCalories.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -119,18 +122,56 @@ fun AddMealScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Quantity Input
-                OutlinedTextField(
-                    value = quantity.toString(),
-                    onValueChange = {
-                        val newQty = it.toDoubleOrNull() ?: 0.0
-                        viewModel.setQuantity(newQty)
-                    },
-                    label = { Text("Quantite (g)") },
+                // Portions / Grammes toggle
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    suffix = { Text("g") }
-                )
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = usePortions,
+                        onClick = { viewModel.setUsePortions(true) },
+                        label = { Text("${selectedFood!!.portionUnit.replaceFirstChar { it.uppercase() }}s") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = !usePortions,
+                        onClick = { viewModel.setUsePortions(false) },
+                        label = { Text("Grammes") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (usePortions) {
+                    OutlinedTextField(
+                        value = if (portionCount == portionCount.toLong().toDouble())
+                            portionCount.toLong().toString()
+                        else portionCount.toString(),
+                        onValueChange = {
+                            viewModel.setPortionCount(it.toDoubleOrNull() ?: 1.0)
+                        },
+                        label = { Text("Nombre de ${selectedFood!!.portionUnit}s") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        supportingText = {
+                            Text("1 ${selectedFood!!.portionUnit} = ${selectedFood!!.portionSize.toInt()} g")
+                        }
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = if (grams == grams.toLong().toDouble())
+                            grams.toLong().toString()
+                        else grams.toString(),
+                        onValueChange = {
+                            viewModel.setGrams(it.toDoubleOrNull() ?: 0.0)
+                        },
+                        label = { Text("Quantité (grammes)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        suffix = { Text("g") }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -138,7 +179,7 @@ fun AddMealScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = PrimaryGreen.copy(alpha = 0.1f)
                     )
                 ) {
                     Row(
@@ -148,10 +189,17 @@ fun AddMealScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Calories",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        Column {
+                            Text(
+                                text = "Calories",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "${effectiveGrams.toInt()} g au total",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         Text(
                             text = "${calculatedCalories.toInt()} kcal",
                             style = MaterialTheme.typography.headlineMedium,
@@ -176,7 +224,7 @@ fun AddMealScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PrimaryGreen
                     ),
-                    enabled = quantity > 0
+                    enabled = calculatedCalories > 0
                 ) {
                     Text("Ajouter le repas")
                 }
@@ -215,11 +263,20 @@ fun FoodListItem(
                     )
                 }
             }
-            Text(
-                text = "${food.caloriesPer100g.toInt()} kcal/100g",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${food.caloriesPer100g.toInt()} kcal/100g",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val kcalPerPortion = (food.caloriesPer100g * food.portionSize / 100).toInt()
+                Text(
+                    text = "≈ $kcalPerPortion kcal / ${food.portionUnit}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = PrimaryGreen,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
