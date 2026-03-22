@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kaloree.data.entity.Food
+import com.kaloree.data.repository.FoodSearchResult
 import com.kaloree.ui.theme.PrimaryGreen
 import com.kaloree.viewmodel.AddMealViewModel
 
@@ -27,7 +28,8 @@ fun AddMealScreen(
     viewModel: AddMealViewModel = viewModel()
 ) {
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-    val foods by viewModel.foods.collectAsStateWithLifecycle()
+    val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
+    val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     val selectedFood by viewModel.selectedFood.collectAsStateWithLifecycle()
     val usePortions by viewModel.usePortions.collectAsStateWithLifecycle()
     val portionCount by viewModel.portionCount.collectAsStateWithLifecycle()
@@ -66,12 +68,24 @@ fun AddMealScreen(
 
             // Food List or Selected Food Details
             if (selectedFood == null) {
-                // Show food list
-                Text(
-                    text = "Selectionne un aliment",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Sélectionne un aliment",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = PrimaryGreen
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -79,10 +93,10 @@ fun AddMealScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(foods) { food ->
+                    items(searchResults) { result ->
                         FoodListItem(
-                            food = food,
-                            onClick = { viewModel.selectFood(food) }
+                            result = result,
+                            onClick = { viewModel.selectFood(result.food) }
                         )
                     }
                 }
@@ -235,9 +249,10 @@ fun AddMealScreen(
 
 @Composable
 fun FoodListItem(
-    food: Food,
+    result: FoodSearchResult,
     onClick: () -> Unit
 ) {
+    val food = result.food
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
@@ -245,16 +260,34 @@ fun FoodListItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text(
-                    text = food.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = food.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (result.isOnline) {
+                        Surface(
+                            color = PrimaryGreen.copy(alpha = 0.15f),
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(
+                                text = "online",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = PrimaryGreen,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
                 food.country?.let {
                     Text(
                         text = it,

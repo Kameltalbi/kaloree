@@ -5,25 +5,37 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kaloree.data.KaloreeDatabase
 import com.kaloree.data.entity.Food
+import com.kaloree.data.repository.FoodRepository
+import com.kaloree.data.repository.FoodSearchResult
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class)
 class AddMealViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val foodDao = KaloreeDatabase.getDatabase(application).foodDao()
+    private val repository = FoodRepository(KaloreeDatabase.getDatabase(application).foodDao())
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    val foods: StateFlow<List<Food>> = _searchQuery
-        .flatMapLatest { query ->
-            if (query.isBlank()) {
-                foodDao.getAllFoods()
-            } else {
-                foodDao.searchFoods(query)
-            }
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private val _searchResults = MutableStateFlow<List<FoodSearchResult>>(emptyList())
+    val searchResults: StateFlow<List<FoodSearchResult>> = _searchResults.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _searchQuery
+                .debounce(400)
+                .collect { query ->
+                    _isSearching.value = true
+                    _searchResults.value = repository.searchWithOnline(query)
+                    _isSearching.value = false
+                }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }
 
     private val _selectedFood = MutableStateFlow<Food?>(null)
     val selectedFood: StateFlow<Food?> = _selectedFood.asStateFlow()
