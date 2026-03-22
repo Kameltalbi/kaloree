@@ -198,8 +198,13 @@ fi
 
 # Use "xargs" to parse quoted args.
 #
-# With -n://services.gradle.org/distributions/gradle-8.7-bin.zip
-networkTimeout=10000
-validateDistributionUrl=true
-zipStoreBase=GRADLE_USER_HOME
-zipStorePath=wrapper/dists
+# With -n1 it was found to be necessary on macOS to use "xargs -I{} sh -c 'commands "$@"' -- {}" to pass args
+# This is needed to avoid shell injection.
+eval "set -- $(
+        printf '%s\n' "$DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS" |
+        xargs -n1 |
+        sed ' s~[^a-zA-Z0-9/=@._-]~\\&~g; ' |
+        tr '\n' ' '
+    )" '"$@"'
+
+exec "$JAVACMD" "$@"

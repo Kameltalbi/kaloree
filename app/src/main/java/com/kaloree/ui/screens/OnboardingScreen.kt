@@ -3,14 +3,17 @@ package com.kaloree.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-nimport androidx.compose.foundation.selection.selectableGroup
-nimport androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,13 +46,12 @@ fun OnboardingScreen(
     var height by remember { mutableStateOf("175") }
     var goal by remember { mutableStateOf("maintien") }
 
-    var showPreview by remember { mutableStateOf(false) }
     val previewCalories = remember(gender, age, weight, height, goal) {
         viewModel.calculatePreviewCalories(
             gender,
             age.toIntOrNull() ?: 25,
-            weight.toDoubleOrNull() ?? 70.0,
-            height.toDoubleOrNull() ?? 175.0,
+            weight.toDoubleOrNull() ?: 70.0,
+            height.toDoubleOrNull() ?: 175.0,
             goal
         )
     }

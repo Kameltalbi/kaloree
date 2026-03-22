@@ -46,8 +46,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val calorieProgress: StateFlow<Float> = combine(user, netCalories) { user, net ->
-        val target = user?.calorieTarget?.toFloat() ?: 2000f
-        ((net / target) * 100).coerceIn(0f, 100f).toFloat()
+        val target = user?.calorieTarget?.toDouble() ?: 2000.0
+        ((net / target) * 100).coerceIn(0.0, 100.0).toFloat()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)
 
     val latestWeight: StateFlow<Double?> = weightLogDao.getAllWeightLogs()
